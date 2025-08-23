@@ -1,0 +1,12 @@
+{
+    "message": "Login successful",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjEsImVtYWlsIjoiYWRtaW5AcGxhdGZvcm0uY29tIiwicm9sZSI6InBsYXRmb3JtX2FkbWluIiwiaG90ZWxJZCI6bnVsbCwiaG90ZWxOYW1lIjpudWxsLCJmaXJzdExvZ2luQ29tcGxldGVkIjp0cnVlLCJpYXQiOjE3NTU2Njg4MDIsImV4cCI6MTc1NTc1NTIwMn0.zBkPTuUwFyzPVxy7Enlw-jLxmOPSkDfCel4dQ9FTqxM",
+    "user": {
+        "id": 1,
+        "email": "admin@platform.com",
+        "name": "Platform Administrator",
+        "role": "platform_admin",
+        "hotelId": null,
+        "hotelName": null,
+        "firstLoginCompleted": true
+    }

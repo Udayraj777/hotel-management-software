@@ -1,0 +1,134 @@
+# Dependencies
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+*/node_modules/
+
+# Environment variables - CRITICAL: Never commit these!
+.env
+.env.local
+.env.production
+.env.development
+.env.test
+backend/.env
+frontend/.env
+*.env
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.sql.backup
+
+# Prisma generated client (auto-regenerated, don't commit)
+backend/src/generated/
+**/generated/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage directory
+coverage/
+*.lcov
+.nyc_output/
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# Build directories
+dist/
+build/
+backend/dist/
+backend/build/
+frontend/build/
+frontend/dist/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# Prisma migrations (keep these for team collaboration)
+# backend/prisma/migrations/*
+# !backend/prisma/migrations/migration_lock.toml
+
+# Test files
+coverage/
+.nyc_output/
+**/test-data/
+**/mock-data/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+
+# Security files
+*.key
+*.pem
+*.crt
+
+# Project-specific test files (keep these local only)
+backend/simple-test.js
+backend/clean-up.js
+backend/create-admin.js
+backend/websocket-client-test.js
+
+# Cache directories
+.cache/
+.parcel-cache/
+
+# TypeScript
+*.tsbuildinfo
+
+# Docker (for future use)
+docker-compose.override.yml
+
+# Deployment
+.vercel/
+.netlify/
+CLAUDE.md

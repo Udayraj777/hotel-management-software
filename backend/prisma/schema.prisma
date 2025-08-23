@@ -1,0 +1,394 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== PLATFORM MANAGEMENT ====================
+
+model Hotel {
+  id                      Int      @id @default(autoincrement())
+  name                    String   @unique
+  address                 String   @db.Text
+  phone                   String   @unique @db.VarChar(20)
+  ownerEmail              String   @unique @map("owner_email")
+  
+  // Simplified Subscription Management
+  subscriptionStatus      String   @default("trial") @map("subscription_status")
+  // Values: 'trial', 'active', 'expired', 'suspended'
+  
+  subscriptionEndDate     DateTime? @map("subscription_end_date")
+  // This is all you need - when their access expires
+  
+  monthlyRate             Decimal? @db.Decimal(10, 2) @map("monthly_rate")
+  // What they should pay (you can set different rates)
+  
+  // Payment & Communication History
+  paymentHistory          String?  @db.Text @map("payment_history")
+  // Your manual notes: "Jan: Paid 4999, Feb: Pending, Called on 15th"
+  
+  lastReminderSent        DateTime? @map("last_reminder_sent")
+  // Track when you last sent reminder to avoid spam
+  
+  // Metadata
+  createdAt               DateTime @default(now()) @map("created_at")
+  isActive                Boolean  @default(true) @map("is_active")
+  
+  // Relations
+  users                   User[]
+  roomTypes               RoomType[]
+  rooms                   Room[]
+  guests                  Guest[]
+  bookings                Booking[]
+  tasks                   Task[]
+  roomServiceOrders       RoomServiceOrder[]
+  discountRules           DiscountRule[]
+  discountApprovals       DiscountApproval[]
+  roomPricings            RoomPricing[]
+  guestPreferences        GuestPreference[]
+  
+  @@map("hotels")
+}
+
+model User {
+  id                    Int       @id @default(autoincrement())
+  hotelId               Int?      @map("hotel_id")
+  email                 String    @unique
+  passwordHash          String    @map("password_hash")
+  name                  String    @db.VarChar(100)
+  phone                 String?   @db.VarChar(20)
+  
+  // Role Management
+  role                  String    @db.VarChar(50)
+  
+  // Account Management
+  firstLoginCompleted   Boolean   @default(false) @map("first_login_completed")
+  createdById           Int?      @map("created_by_id")
+  lastLogin             DateTime? @map("last_login")
+  
+  // Metadata
+  createdAt             DateTime  @default(now()) @map("created_at")
+  isActive              Boolean   @default(true) @map("is_active")
+  
+  // Relations
+  hotel                 Hotel?    @relation(fields: [hotelId], references: [id])
+  createdBy             User?     @relation("UserCreatedBy", fields: [createdById], references: [id])
+  createdUsers          User[]    @relation("UserCreatedBy")
+  assignedTasks         Task[]    @relation("TaskAssignedTo")
+  createdTasks          Task[]    @relation("TaskAssignedBy")
+  roomPricings          RoomPricing[]
+  discountRules         DiscountRule[]
+  requestedDiscounts    DiscountApproval[] @relation("DiscountRequestedBy")
+  approvedDiscounts     DiscountApproval[] @relation("DiscountApprovedBy")
+  
+  @@map("users")
+}
+
+// ==================== ROOM MANAGEMENT ====================
+
+model RoomType {
+  id            Int      @id @default(autoincrement())
+  hotelId       Int      @map("hotel_id")
+  name          String   @db.VarChar(100)
+  basePrice     Decimal  @db.Decimal(10, 2) @map("base_price")
+  description   String?  @db.Text
+  amenities     String?  @db.Text
+  createdAt     DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  hotel         Hotel    @relation(fields: [hotelId], references: [id])
+  rooms         Room[]
+  roomPricings  RoomPricing[]
+  
+  @@map("room_types")
+}
+
+model RoomPricing {
+  id              Int      @id @default(autoincrement())
+  hotelId         Int      @map("hotel_id")
+  roomTypeId      Int      @map("room_type_id")
+  price           Decimal  @db.Decimal(10, 2)
+  effectiveDate   DateTime @map("effective_date")
+  endDate         DateTime @map("end_date")
+  occasion        String?  @db.VarChar(100)
+  isActive        Boolean  @default(true) @map("is_active")
+  createdById     Int      @map("created_by_id")
+  createdAt       DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  hotel           Hotel    @relation(fields: [hotelId], references: [id])
+  roomType        RoomType @relation(fields: [roomTypeId], references: [id])
+  createdBy       User     @relation(fields: [createdById], references: [id])
+  
+  @@map("room_pricing")
+}
+
+model Room {
+  id              Int      @id @default(autoincrement())
+  hotelId         Int      @map("hotel_id")
+  roomTypeId      Int      @map("room_type_id")
+  roomNumber      String   @db.VarChar(10) @map("room_number")
+  floor           String?  @db.VarChar(20)
+  
+  // Status Management
+  status          String   @default("available") @db.VarChar(30)
+  
+  lastUpdated     DateTime @default(now()) @updatedAt @map("last_updated")
+  notes           String?  @db.Text
+  createdAt       DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  hotel           Hotel    @relation(fields: [hotelId], references: [id])
+  roomType        RoomType @relation(fields: [roomTypeId], references: [id])
+  tasks           Task[]
+  bookings        Booking[]
+  roomServiceOrders RoomServiceOrder[]
+  
+  @@unique([hotelId, roomNumber])
+  @@map("rooms")
+}
+
+model Task {
+  id                    Int       @id @default(autoincrement())
+  hotelId               Int       @map("hotel_id")
+  roomId                Int?      @map("room_id")  // Optional - for general tasks
+  
+  // Task Details
+  taskType              String    @db.VarChar(50) @map("task_type")
+  // Values: 'cleaning', 'maintenance', 'inspection', 'routine', 'complaint', 'general'
+  
+  assignedToId          Int?      @map("assigned_to_id")
+  assignedById          Int       @map("assigned_by_id")
+  
+  // Status & Priority
+  status                String    @default("pending") @db.VarChar(30)
+  priority              String    @default("medium") @db.VarChar(20)
+  
+  // Scheduling & Recurrence
+  description           String    @db.Text
+  scheduledFor          DateTime? @map("scheduled_for")
+  estimatedDuration     Int?      @map("estimated_duration")
+  
+  // For recurring tasks
+  isRecurring           Boolean   @default(false) @map("is_recurring")
+  recurrencePattern     String?   @db.VarChar(20) @map("recurrence_pattern")
+  // Values: 'daily', 'weekly', 'monthly'
+  recurrenceEndDate     DateTime? @map("recurrence_end_date")
+  parentTaskId          Int?      @map("parent_task_id")  // Links to original recurring task
+  
+  // Completion tracking
+  startedAt             DateTime? @map("started_at")
+  completedAt           DateTime? @map("completed_at")
+  
+  // Notes & Instructions
+  specialInstructions   String?   @db.Text @map("special_instructions")
+  completionNotes       String?   @db.Text @map("completion_notes")
+  
+  // For complaints
+  guestName             String?   @db.VarChar(100) @map("guest_name")
+  guestPhone            String?   @db.VarChar(20) @map("guest_phone")
+  complaintSource       String?   @db.VarChar(50) @map("complaint_source")
+  // Values: 'guest', 'inspection', 'staff', 'online_review'
+  
+  createdAt             DateTime  @default(now()) @map("created_at")
+  
+  // Relations
+  hotel                 Hotel     @relation(fields: [hotelId], references: [id])
+  room                  Room?     @relation(fields: [roomId], references: [id])  // Optional
+  assignedTo            User?     @relation("TaskAssignedTo", fields: [assignedToId], references: [id])
+  assignedBy            User      @relation("TaskAssignedBy", fields: [assignedById], references: [id])
+  parentTask            Task?     @relation("TaskRecurrence", fields: [parentTaskId], references: [id])
+  childTasks            Task[]    @relation("TaskRecurrence")
+  
+  @@map("tasks")
+}
+
+// ==================== GUEST MANAGEMENT ====================
+
+model Guest {
+  id              Int      @id @default(autoincrement())
+  hotelId         Int      @map("hotel_id")
+  
+  // Personal Information
+  name            String   @db.VarChar(100)
+  email           String?
+  phone           String   @db.VarChar(20)
+  address         String   @db.Text
+  organization    String?
+  guestType       String   @default("individual") @db.VarChar(20) @map("guest_type")
+  
+  // ID Verification
+  idType          String   @db.VarChar(50) @map("id_type")
+  idNumber        String   @db.VarChar(100) @map("id_number")
+  idDocumentUrl   String?  @db.VarChar(500) @map("id_document_url")
+  idDocumentKey   String?  @db.VarChar(500) @map("id_document_key")
+  
+  createdAt       DateTime @default(now()) @map("created_at")
+  
+  // Relations
+  hotel           Hotel    @relation(fields: [hotelId], references: [id])
+  bookings        Booking[]
+  preferences     GuestPreference[]
+  roomServiceOrders RoomServiceOrder[]
+  
+  @@map("guests")
+}
+
+model Booking {
+  id                Int      @id @default(autoincrement())
+  hotelId           Int      @map("hotel_id")
+  guestId           Int      @map("guest_id")
+  roomId            Int      @map("room_id")
+  
+  // Stay Details
+  checkInDate       DateTime @map("check_in_date")
+  checkOutDate      DateTime @map("check_out_date")
+  numberOfGuests    Int      @default(1) @map("number_of_guests")
+  
+  // Pricing
+  roomRate          Decimal  @db.Decimal(10, 2) @map("room_rate")
+  totalNights       Int      @map("total_nights")
+  baseAmount        Decimal  @db.Decimal(10, 2) @map("base_amount")
+  finalAmount       Decimal  @db.Decimal(10, 2) @map("final_amount")
+  
+  // Status Management
+  status            String   @default("confirmed") @db.VarChar(20)
+  discountStatus    String   @default("none") @db.VarChar(20) @map("discount_status")
+  
+  // Additional Information
+  paymentStatus     String   @default("pending") @db.VarChar(20) @map("payment_status")
+  specialRequests   String?  @db.Text @map("special_requests")
+  source            String   @default("walk_in") @db.VarChar(30)
+  
+  // Timestamps
+  createdAt         DateTime @default(now()) @map("created_at")
+  checkedInAt       DateTime? @map("checked_in_at")
+  checkedOutAt      DateTime? @map("checked_out_at")
+  
+  // Relations
+  hotel             Hotel    @relation(fields: [hotelId], references: [id])
+  guest             Guest    @relation(fields: [guestId], references: [id])
+  room              Room     @relation(fields: [roomId], references: [id])
+  roomServiceOrders RoomServiceOrder[]
+  discountApprovals DiscountApproval[]
+  
+  @@map("bookings")
+}
+
+model GuestPreference {
+  id                Int      @id @default(autoincrement())
+  hotelId           Int      @map("hotel_id")
+  guestId           Int      @map("guest_id")
+  
+  preferenceType    String   @db.VarChar(50) @map("preference_type")
+  preferenceValue   String   @db.VarChar(255) @map("preference_value")
+  notes             String?  @db.Text
+  frequency         Int      @default(1)
+  
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  hotel             Hotel    @relation(fields: [hotelId], references: [id])
+  guest             Guest    @relation(fields: [guestId], references: [id])
+  
+  @@map("guest_preferences")
+}
+
+// ==================== REVENUE MANAGEMENT ====================
+
+model RoomServiceOrder {
+  id                    Int       @id @default(autoincrement())
+  hotelId               Int       @map("hotel_id")
+  bookingId             Int       @map("booking_id")
+  guestId               Int       @map("guest_id")
+  roomId                Int       @map("room_id")
+  
+  // Order Details
+  itemName              String    @db.VarChar(255) @map("item_name")
+  quantity              Int
+  unitPrice             Decimal   @db.Decimal(10, 2) @map("unit_price")
+  totalAmount           Decimal   @db.Decimal(10, 2) @map("total_amount")
+  specialInstructions   String?   @db.Text @map("special_instructions")
+  
+  // Billing Method
+  paymentMethod         String    @db.VarChar(20) @map("payment_method")
+  paymentStatus         String    @default("pending") @db.VarChar(20) @map("payment_status")
+  
+  // Order Status
+  orderStatus           String    @default("received") @db.VarChar(20) @map("order_status")
+  
+  // Timestamps
+  orderedAt             DateTime  @default(now()) @map("ordered_at")
+  preparedAt            DateTime? @map("prepared_at")
+  deliveredAt           DateTime? @map("delivered_at")
+  
+  deliveryNotes         String?   @db.Text @map("delivery_notes")
+  
+  // Relations
+  hotel                 Hotel     @relation(fields: [hotelId], references: [id])
+  booking               Booking   @relation(fields: [bookingId], references: [id])
+  guest                 Guest     @relation(fields: [guestId], references: [id])
+  room                  Room      @relation(fields: [roomId], references: [id])
+  
+  @@map("room_service_orders")
+}
+
+model DiscountRule {
+  id                    Int      @id @default(autoincrement())
+  hotelId               Int      @map("hotel_id")
+  userRole              String   @db.VarChar(50) @map("user_role")
+  maxDiscountPercentage Decimal  @db.Decimal(5, 2) @map("max_discount_percentage")
+  isActive              Boolean  @default(true) @map("is_active")
+  createdById           Int      @map("created_by_id")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  hotel                 Hotel    @relation(fields: [hotelId], references: [id])
+  createdBy             User     @relation(fields: [createdById], references: [id])
+  
+  @@map("discount_rules")
+}
+
+model DiscountApproval {
+  id                Int       @id @default(autoincrement())
+  hotelId           Int       @map("hotel_id")
+  bookingId         Int       @map("booking_id")
+  
+  // Request Details
+  requestedById     Int       @map("requested_by_id")
+  approvedById      Int?      @map("approved_by_id")
+  
+  // Financial Details
+  originalAmount    Decimal   @db.Decimal(10, 2) @map("original_amount")
+  discountPercentage Decimal  @db.Decimal(5, 2) @map("discount_percentage")
+  discountAmount    Decimal   @db.Decimal(10, 2) @map("discount_amount")
+  finalAmount       Decimal   @db.Decimal(10, 2) @map("final_amount")
+  
+  // Approval Status
+  status            String    @db.VarChar(20)
+  reason            String    @db.Text
+  approvalNotes     String?   @db.Text @map("approval_notes")
+  
+  // Timestamps
+  requestedAt       DateTime  @default(now()) @map("requested_at")
+  approvedAt        DateTime? @map("approved_at")
+  
+  // Relations
+  hotel             Hotel     @relation(fields: [hotelId], references: [id])
+  booking           Booking   @relation(fields: [bookingId], references: [id])
+  requestedBy       User      @relation("DiscountRequestedBy", fields: [requestedById], references: [id])
+  approvedBy        User?     @relation("DiscountApprovedBy", fields: [approvedById], references: [id])
+  
+  @@map("discount_approvals")
+}
