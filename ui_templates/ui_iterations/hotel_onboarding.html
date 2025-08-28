@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Onboarding System - HotelOps Platform Admin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.5;
+            color: #374151;
+            background-color: #F9FAFB;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        /* Navigation */
+        .nav {
+            background: #FFFFFF;
+            border-bottom: 1px solid #E5E7EB;
+            padding: 1rem 0;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+        }
+
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #FF6B6B;
+        }
+
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: #6B7280;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .nav-link:hover {
+            color: #374151;
+        }
+
+        .btn-primary {
+            background-color: #FF6B6B;
+            color: #FFFFFF;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary:hover {
+            background-color: #FF5252;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+        }
+
+        .btn-secondary {
+            background-color: #FFFFFF;
+            color: #374151;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border: 1px solid #E5E7EB;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-secondary:hover {
+            background-color: #F9FAFB;
+            border-color: #D1D5DB;
+        }
+
+        .btn-ghost {
+            background-color: transparent;
+            color: #6B7280;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border: 1px solid #E5E7EB;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-ghost:hover {
+            background-color: #F9FAFB;
+            color: #374151;
+        }
+
+        /* Main Content */
+        .main {
+            margin-top: 80px;
+            min-height: calc(100vh - 80px);
+            padding: 2rem 0;
+        }
+
+        .onboarding-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .onboarding-header h1 {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 0.75rem;
+        }
+
+        .onboarding-header p {
+            font-size: 1.125rem;
+            color: #6B7280;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Progress Indicator */
+        .progress-container {
+            background: #FFFFFF;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border: 1px solid #F3F4F6;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .progress-line {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #E5E7EB;
+            z-index: 1;
+        }
+
+        .progress-line-active {
+            position: absolute;
+            top: 20px;
+            left: 0;
+            height: 2px;
+            background: #FF6B6B;
+            z-index: 2;
+            transition: width 0.3s ease;
+            width: 20%;
+        }
+
+        .progress-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 3;
+            flex: 1;
+            max-width: 160px;
+        }
+
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #E5E7EB;
+            color: #6B7280;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+            transition: all 0.2s ease;
+        }
+
+        .step-circle.active {
+            background: #FF6B6B;
+            color: #FFFFFF;
+        }
+
+        .step-circle.completed {
+            background: #10B981;
+            color: #FFFFFF;
+        }
+
+        .step-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #374151;
+            text-align: center;
+        }
+
+        .step-title.active {
+            color: #FF6B6B;
+        }
+
+        /* Form Container */
+        .form-container {
+            background: #FFFFFF;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border: 1px solid #F3F4F6;
+            overflow: hidden;
+        }
+
+        .form-header {
+            padding: 2rem;
+            border-bottom: 1px solid #E5E7EB;
+        }
+
+        .form-header h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-header p {
+            color: #6B7280;
+        }
+
+        .form-body {
+            padding: 2rem;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group.half-width {
+            display: inline-block;
+            width: calc(50% - 0.5rem);
+            margin-right: 1rem;
+        }
+
+        .form-group.half-width:nth-child(even) {
+            margin-right: 0;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #D1D5DB;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            background: #FFFFFF;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #FF6B6B;
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+        }
+
+        .form-input.error {
+            border-color: #EF4444;
+        }
+
+        .form-input.success {
+            border-color: #10B981;
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #D1D5DB;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            background: #FFFFFF;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: #FF6B6B;
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+        }
+
+        .form-error {
+            font-size: 0.75rem;
+            color: #EF4444;
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        .form-success {
+            font-size: 0.75rem;
+            color: #10B981;
+            margin-top: 0.25rem;
+            display: none;
+        }
+
+        .form-help {
+            font-size: 0.75rem;
+            color: #6B7280;
+            margin-top: 0.25rem;
+        }
+
+        /* Subscription Plan Cards */
+        .plan-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .plan-card {
+            border: 2px solid #E5E7EB;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #FFFFFF;
+        }
+
+        .plan-card:hover {
+            border-color: #D1D5DB;
+        }
+
+        .plan-card.selected {
+            border-color: #FF6B6B;
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+        }
+
+        .plan-header {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .plan-name {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+
+        .plan-price {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #FF6B6B;
+        }
+
+        .plan-price-period {
+            font-size: 0.875rem;
+            color: #6B7280;
+        }
+
+        .plan-features {
+            list-style: none;
+            margin: 1rem 0;
+        }
+
+        .plan-features li {
+            padding: 0.5rem 0;
+            color: #374151;
+            display: flex;
+            align-items: center;
+        }
+
+        .plan-features li::before {
+            content: "✓";
+            color: #10B981;
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+
+        /* Form Actions */
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2rem;
+            border-top: 1px solid #E5E7EB;
+            background: #F9FAFB;
+        }
+
+        .form-actions-left {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .form-actions-right {
+            display: flex;
+            gap: 1rem;
+        }
+
+        /* Step Content */
+        .step-content {
+            display: none;
+        }
+
+        .step-content.active {
+            display: block;
+        }
+
+        /* Review Section */
+        .review-section {
+            margin-bottom: 2rem;
+        }
+
+        .review-section h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #E5E7EB;
+        }
+
+        .review-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #F3F4F6;
+        }
+
+        .review-item:last-child {
+            border-bottom: none;
+        }
+
+        .review-label {
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .review-value {
+            color: #6B7280;
+            text-align: right;
+        }
+
+        .review-edit {
+            color: #FF6B6B;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .review-edit:hover {
+            text-decoration: underline;
+        }
+
+        /* Success State */
+        .success-container {
+            text-align: center;
+            padding: 3rem 2rem;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: #10B981;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 2rem;
+            color: #FFFFFF;
+        }
+
+        .success-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.75rem;
+        }
+
+        .success-message {
+            color: #6B7280;
+            margin-bottom: 2rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .nav-menu {
+                display: none;
+            }
+
+            .onboarding-header h1 {
+                font-size: 1.875rem;
+            }
+
+            .progress-steps {
+                flex-wrap: wrap;
+                gap: 1rem;
+            }
+
+            .progress-step {
+                max-width: none;
+                flex: 0 0 calc(50% - 0.5rem);
+            }
+
+            .progress-line {
+                display: none;
+            }
+
+            .form-group.half-width {
+                width: 100%;
+                margin-right: 0;
+            }
+
+            .form-actions {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .form-actions-left,
+            .form-actions-right {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .plan-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="container">
+            <div class="nav-content">
+                <div class="logo">HotelOps Admin</div>
+                <ul class="nav-menu">
+                    <li><a href="#" class="nav-link">Dashboard</a></li>
+                    <li><a href="#" class="nav-link">Hotels</a></li>
+                    <li><a href="#" class="nav-link">Analytics</a></li>
+                    <li><a href="#" class="nav-link">Settings</a></li>
+                    <li><a href="#" class="btn-secondary">Sign Out</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <!-- Header -->
+            <div class="onboarding-header">
+                <h1>Hotel Onboarding System</h1>
+                <p>Set up a new hotel account with automated owner creation and subscription management.</p>
+            </div>
+
+            <!-- Progress Indicator -->
+            <div class="progress-container">
+                <div class="progress-steps">
+                    <div class="progress-line"></div>
+                    <div class="progress-line-active" id="progressLine"></div>
+                    
+                    <div class="progress-step">
+                        <div class="step-circle active" id="step1Circle">1</div>
+                        <div class="step-title active">Hotel Details</div>
+                    </div>
+                    <div class="progress-step">
+                        <div class="step-circle" id="step2Circle">2</div>
+                        <div class="step-title">Owner Account</div>
+                    </div>
+                    <div class="progress-step">
+                        <div class="step-circle" id="step3Circle">3</div>
+                        <div class="step-title">Subscription Plan</div>
+                    </div>
+                    <div class="progress-step">
+                        <div class="step-circle" id="step4Circle">4</div>
+                        <div class="step-title">Billing Setup</div>
+                    </div>
+                    <div class="progress-step">
+                        <div class="step-circle" id="step5Circle">5</div>
+                        <div class="step-title">Review & Submit</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Container -->
+            <form id="onboardingForm" class="form-container">
+                <!-- Step 1: Hotel Details -->
+                <div class="step-content active" id="step1">
+                    <div class="form-header">
+                        <h2>Hotel Basic Information</h2>
+                        <p>Enter the basic details about the hotel property.</p>
+                    </div>
+                    <div class="form-body">
+                        <div class="form-group">
+                            <label class="form-label" for="hotelName">Hotel Name *</label>
+                            <input type="text" id="hotelName" name="hotelName" class="form-input" required>
+                            <div class="form-error" id="hotelNameError">Please enter a hotel name</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="hotelDescription">Hotel Description</label>
+                            <textarea id="hotelDescription" name="hotelDescription" class="form-input form-textarea" placeholder="Brief description of the hotel..."></textarea>
+                            <div class="form-help">Optional: This helps with marketing and guest information</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="address">Street Address *</label>
+                            <input type="text" id="address" name="address" class="form-input" required>
+                            <div class="form-error" id="addressError">Please enter the hotel address</div>
+                        </div>
+
+                        <div class="form-group half-width">
+                            <label class="form-label" for="city">City *</label>
+                            <input type="text" id="city" name="city" class="form-input" required>
+                            <div class="form-error" id="cityError">Please enter the city</div>
+                        </div>
+
+                        <div class="form-group half-width">
+                            <label class="form-label" for="state">State/Province *</label>
+                            <input type="text" id="state" name="state" class="form-input" required>
+                            <div class="form-error" id="stateError">Please enter the state</div>
+                        </div>
+
+                        <div class="form-group half-width">
+                            <label class="form-label" for="zipCode">ZIP/Postal Code *</label>
+                            <input type="text" id="zipCode" name="zipCode" class="form-input" required>
+                            <div class="form-error" id="zipCodeError">Please enter the ZIP code</div>
+                        </div>
+
+                        <div class="form-group half-width">
+                            <label class="form-label" for="country">Country *</label>
+                            <select id="country" name="country" class="form-select" required>
+                                <option value="">Select Country</option>
+                                <option value="US">United States</option>
+                                <option value="CA">Canada</option>
+                                <option value="UK">United Kingdom</option>
+                                <option value="AU">Australia</option>
+                                <option value="IN">India</option>
+                                <option value="OTHER">Other</option>
+                            </select>
+                            <div class="form-error" id="countryError">Please select a country</div>
+                        </div>
+
+                        <div class="form-group half-width">
+                            <label class="form-label" for="phone">Hotel Phone Number *</label>
+                            <input type="tel" id="phone" name="phone" class="form-input" required>
+                            <div class="form-error" id="phoneError">Please enter a valid phone number</div>
+                        </div>
+
+                        <div class="form-group half-width">
+                            <label class="form-label" for="email">Hotel Email *</label>
+                            <input type="email" id="email" name="email" class="form-input" required>
+                            <div class="form-error" id="emailError">Please enter a valid email address</div>
+                        </div>
+
+                        <div class="form-group half-width">
+                            <label class="form-label" for="website">Hotel Website</label>
+                            <input type="url" id="website" name="website" class="form-input" placeholder="https://example.com">
+                        </div>
+
+                        <div class="form-group half-width">
+                            <label class="form-label" for="roomCount">Total Number of Rooms *</label>
+                            <input type="number" id="roomCount" name="roomCount" class="form-input" min="1" max="10000" required>
+                            <div class="form-error" id="roomCountError">Please enter the number of rooms</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Owner Account -->
+                <div class="step-content" id="step2">
+                    <div class="form-header">
+                        <h2>Owner Account Setup</h2>
+                        <p>Create the hotel owner account. This person will have full administrative access to the hotel system.</p>
+                    </div>
+                    <div class="form-body">
+                        <div class="form-group half-width">
+                            <label class="form-label" for="ownerFirstName">First Name *</label>
+                            <input type="text" id="ownerFirstName" name="ownerFirstName" class="form-input" required>
+                            <div class="form-error" id="ownerFirstNameError">Please enter the first name</div>
+                        </div>
+
+                        <div class="form-group half-width">
+                            <label class="form-label" for="ownerLastName">Last Name *</label>
+                            <input type="text" id="ownerLastName" name="ownerLastName" class="form-input" required>
+                            <div class="form-error" id="ownerLastNameError">Please enter the last name</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="ownerEmail">Owner Email Address *</label>
+                            <input type="email" id="ownerEmail" name="ownerEmail" class="form-input" required>
+                            <div class="form-help">This will be used for login and important notifications</div>
+                            <div class="form-error" id="ownerEmailError">Please enter a valid email address</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="ownerPhone">Owner Phone Number *</label>
+                            <input type="tel" id="ownerPhone" name="ownerPhone" class="form-input" required>
+                            <div class="form-error" id="ownerPhoneError">Please enter a valid phone number</div>
+                        </div>
+
+                        <div class="form-group half-width">
+                            <label class="form-label" for="ownerPassword">Temporary Password *</label>
+                            <input type="password" id="ownerPassword" name="ownerPassword" class="form-input" required>
+                            <div class="form-help">Owner will be prompted to change this on first login</div>
+                            <div class="form-error" id="ownerPasswordError">Password must be at least 8 characters</div>
+                        </div>
+
+                        <div class="form-group half-width">
+                            <label class="form-label" for="ownerPasswordConfirm">Confirm Password *</label>
+                            <input type="password" id="ownerPasswordConfirm" name="ownerPasswordConfirm" class="form-input" required>
+                            <div class="form-error" id="ownerPasswordConfirmError">Passwords don't match</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="ownerTitle">Job Title</label>
+                            <input type="text" id="ownerTitle" name="ownerTitle" class="form-input" placeholder="e.g., Owner, General Manager">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Subscription Plan -->
+                <div class="step-content" id="step3">
+                    <div class="form-header">
+                        <h2>Subscription Plan Selection</h2>
+                        <p>Choose the subscription plan that best fits the hotel's needs.</p>
+                    </div>
+                    <div class="form-body">
+                        <div class="plan-grid">
+                            <div class="plan-card" data-plan="starter">
+                                <div class="plan-header">
+                                    <div class="plan-name">Starter</div>
+                                    <div class="plan-price">$49<span class="plan-price-period">/month</span></div>
+                                </div>
+                                <ul class="plan-features">
+                                    <li>Up to 25 rooms</li>
+                                    <li>Basic reservation management</li>
+                                    <li>Guest check-in/out</li>
+                                    <li>Email support</li>
+                                    <li>Mobile app access</li>
+                                </ul>
+                            </div>
+
+                            <div class="plan-card selected" data-plan="professional">
+                                <div class="plan-header">
+                                    <div class="plan-name">Professional</div>
+                                    <div class="plan-price">$99<span class="plan-price-period">/month</span></div>
+                                </div>
+                                <ul class="plan-features">
+                                    <li>Up to 100 rooms</li>
+                                    <li>Advanced reservation system</li>
+                                    <li>Housekeeping management</li>
+                                    <li>Channel manager integration</li>
+                                    <li>Reports & analytics</li>
+                                    <li>Priority phone support</li>
+                                </ul>
+                            </div>
+
+                            <div class="plan-card" data-plan="enterprise">
+                                <div class="plan-header">
+                                    <div class="plan-name">Enterprise</div>
+                                    <div class="plan-price">$199<span class="plan-price-period">/month</span></div>
+                                </div>
+                                <ul class="plan-features">
+                                    <li>Unlimited rooms</li>
+                                    <li>Multi-property management</li>
+                                    <li>Advanced analytics</li>
+                                    <li>Custom integrations</li>
+                                    <li>Revenue management</li>
+                                    <li>24/7 dedicated support</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="billingCycle">Billing Cycle</label>
+                            <select id="billingCycle" name="billingCycle" class="form-select">
+                                <option value="monthly">Monthly Billing</option>
+                                <option value="annual">Annual Billing (Save 15%)</option>
+                            </select>
+                            <div class="form-help">Annual billing provides a 15% discount</div>
+                        </div>
+
+                        <input type="hidden" id="selectedPlan" name="selectedPlan" value="professional">
+                    </div>
+                </div>
+
+                <!-- Step 4: Billing Configuration -->
+                <div class="step-content" id="step4">
+                    <div class="form-header">
+                        <h2>Billing Configuration</h2>
+                        <p>Set up billing information and payment method for the subscription.</p>
+                    </div>
+                    <div class="form-body">
+                        <div class="form-group">
+                            <label class="form-label" for="billingName">Billing Name *</label>
+                            <input type="text" id="billingName" name="billingName" class="form-input" required>
+                            <div class="form-error" id="billingNameError">Please enter the billing name</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="billingAddress">Billing Address *</label>
+                            <input type="text" id="billingAddress" name="billingAddress" class="form-input" required>
+                            <div class="form-error" id="billingAddressError">Please enter the billing address</div>
+                        </div>
+
+                        <div class="form-group half-width">
+                            <label class="form-label" for="billingCity">City *</label>
+                            <input type="text" id="billingCity" name="billingCity" class="form-input" required>
+                            <div class="form-error" id="billingCityError">Please enter the city</div>
+                        </div>
+
+                        <div class="form-group half-width">
+                            <label class="form-label" for="billingState">State/Province *</label>
+                            <input type="text" id="billingState" name="billingState" class="form-input" required>
+                            <div class="form-error" id="billingStateError">Please enter the state</div>
+                        </div>
+
+                        <div class="form-group half-width">
+                            <label class="form-label" for="billingZip">ZIP/Postal Code *</label>
+                            <input type="text" id="billingZip" name="billingZip" class="form-input" required>
+                            <div class="form-error" id="billingZipError">Please enter the ZIP code</div>
+                        </div>
+
+                        <div class="form-group half-width">
+                            <label class="form-label" for="billingCountry">Country *</label>
+                            <select id="billingCountry" name="billingCountry" class="form-select" required>
+                                <option value="">Select Country</option>
+                                <option value="US">United States</option>
+                                <option value="CA">Canada</option>
+                                <option value="UK">United Kingdom</option>
+                                <option value="AU">Australia</option>
+                                <option value="IN">India</option>
+                                <option value="OTHER">Other</option>
+                            </select>
+                            <div class="form-error" id="billingCountryError">Please select a country</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="taxId">Tax ID / VAT Number</label>
+                            <input type="text" id="taxId" name="taxId" class="form-input" placeholder="Optional">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="paymentMethod">Payment Method *</label>
+                            <select id="paymentMethod" name="paymentMethod" class="form-select" required>
+                                <option value="">Select Payment Method</option>
+                                <option value="card">Credit/Debit Card</option>
+                                <option value="bank">Bank Transfer</option>
+                                <option value="invoice">Invoice (Enterprise only)</option>
+                            </select>
+                            <div class="form-help">Payment details will be collected after account creation</div>
+                            <div class="form-error" id="paymentMethodError">Please select a payment method</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="billingEmail">Billing Contact Email *</label>
+                            <input type="email" id="billingEmail" name="billingEmail" class="form-input" required>
+                            <div class="form-help">Where invoices and billing notifications will be sent</div>
+                            <div class="form-error" id="billingEmailError">Please enter a valid email address</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 5: Review & Submit -->
+                <div class="step-content" id="step5">
+                    <div class="form-header">
+                        <h2>Review & Submit</h2>
+                        <p>Please review all information before creating the hotel account.</p>
+                    </div>
+                    <div class="form-body">
+                        <div class="review-section">
+                            <h3>Hotel Information</h3>
+                            <div class="review-item">
+                                <span class="review-label">Hotel Name:</span>
+                                <span class="review-value" id="reviewHotelName">-</span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Address:</span>
+                                <span class="review-value" id="reviewAddress">-</span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Phone:</span>
+                                <span class="review-value" id="reviewPhone">-</span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Email:</span>
+                                <span class="review-value" id="reviewEmail">-</span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Room Count:</span>
+                                <span class="review-value" id="reviewRoomCount">-</span>
+                            </div>
+                        </div>
+
+                        <div class="review-section">
+                            <h3>Owner Account</h3>
+                            <div class="review-item">
+                                <span class="review-label">Owner Name:</span>
+                                <span class="review-value" id="reviewOwnerName">-</span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Owner Email:</span>
+                                <span class="review-value" id="reviewOwnerEmail">-</span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Owner Phone:</span>
+                                <span class="review-value" id="reviewOwnerPhone">-</span>
+                            </div>
+                        </div>
+
+                        <div class="review-section">
+                            <h3>Subscription Details</h3>
+                            <div class="review-item">
+                                <span class="review-label">Plan:</span>
+                                <span class="review-value" id="reviewPlan">-</span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Billing Cycle:</span>
+                                <span class="review-value" id="reviewBillingCycle">-</span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Monthly Cost:</span>
+                                <span class="review-value" id="reviewCost">-</span>
+                            </div>
+                        </div>
+
+                        <div class="review-section">
+                            <h3>Billing Information</h3>
+                            <div class="review-item">
+                                <span class="review-label">Billing Name:</span>
+                                <span class="review-value" id="reviewBillingName">-</span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Billing Address:</span>
+                                <span class="review-value" id="reviewBillingAddress">-</span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Payment Method:</span>
+                                <span class="review-value" id="reviewPaymentMethod">-</span>
+                            </div>
+                            <div class="review-item">
+                                <span class="review-label">Billing Email:</span>
+                                <span class="review-value" id="reviewBillingEmail">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Success Step -->
+                <div class="step-content" id="success">
+                    <div class="success-container">
+                        <div class="success-icon">✓</div>
+                        <div class="success-title">Hotel Account Created Successfully!</div>
+                        <div class="success-message">
+                            The hotel account has been created and the owner has been notified via email with login instructions.
+                            <br><br>
+                            <strong>Next Steps:</strong><br>
+                            • Owner will receive login credentials via email<br>
+                            • Payment setup will be completed during first login<br>
+                            • System configuration can begin immediately
+                        </div>
+                        <div class="form-actions-right">
+                            <button type="button" class="btn-secondary" onclick="location.href='#'">View Hotel List</button>
+                            <button type="button" class="btn-primary" onclick="resetForm()">Create Another Hotel</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions" id="formActions">
+                    <div class="form-actions-left">
+                        <button type="button" class="btn-ghost" onclick="saveDraft()">Save as Draft</button>
+                    </div>
+                    <div class="form-actions-right">
+                        <button type="button" class="btn-secondary" id="prevBtn" onclick="previousStep()" style="display: none;">Previous</button>
+                        <button type="button" class="btn-primary" id="nextBtn" onclick="nextStep()">Next Step</button>
+                        <button type="button" class="btn-primary" id="submitBtn" onclick="submitForm()" style="display: none;">Create Hotel Account</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 5;
+
+        // Plan pricing
+        const planPricing = {
+            starter: { monthly: 49, annual: 49 * 12 * 0.85 },
+            professional: { monthly: 99, annual: 99 * 12 * 0.85 },
+            enterprise: { monthly: 199, annual: 199 * 12 * 0.85 }
+        };
+
+        // Initialize form
+        document.addEventListener('DOMContentLoaded', function() {
+            updateProgressBar();
+            setupPlanSelection();
+            populateFormFromDraft();
+        });
+
+        function nextStep() {
+            if (validateCurrentStep()) {
+                if (currentStep === 5) {
+                    updateReviewContent();
+                }
+                currentStep++;
+                updateStepDisplay();
+                updateProgressBar();
+            }
+        }
+
+        function previousStep() {
+            currentStep--;
+            updateStepDisplay();
+            updateProgressBar();
+        }
+
+        function updateStepDisplay() {
+            // Hide all steps
+            document.querySelectorAll('.step-content').forEach(step => {
+                step.classList.remove('active');
+            });
+
+            // Show current step
+            document.getElementById(`step${currentStep}`).classList.add('active');
+
+            // Update navigation buttons
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const submitBtn = document.getElementById('submitBtn');
+            const formActions = document.getElementById('formActions');
+
+            if (currentStep === 1) {
+                prevBtn.style.display = 'none';
+            } else if (currentStep === 6) {
+                // Success step
+                formActions.style.display = 'none';
+            } else {
+                prevBtn.style.display = 'inline-block';
+            }
+
+            if (currentStep === 5) {
+                nextBtn.style.display = 'none';
+                submitBtn.style.display = 'inline-block';
+            } else if (currentStep < 6) {
+                nextBtn.style.display = 'inline-block';
+                submitBtn.style.display = 'none';
+            }
+        }
+
+        function updateProgressBar() {
+            const progressLine = document.getElementById('progressLine');
+            const progressPercent = ((currentStep - 1) / (totalSteps - 1)) * 100;
+            progressLine.style.width = progressPercent + '%';
+
+            // Update step circles
+            for (let i = 1; i <= totalSteps; i++) {
+                const circle = document.getElementById(`step${i}Circle`);
+                const title = circle.nextElementSibling;
+
+                if (i < currentStep) {
+                    circle.classList.remove('active');
+                    circle.classList.add('completed');
+                    circle.innerHTML = '✓';
+                    title.classList.remove('active');
+                } else if (i === currentStep) {
+                    circle.classList.remove('completed');
+                    circle.classList.add('active');
+                    circle.innerHTML = i;
+                    title.classList.add('active');
+                } else {
+                    circle.classList.remove('active', 'completed');
+                    circle.innerHTML = i;
+                    title.classList.remove('active');
+                }
+            }
+        }
+
+        function validateCurrentStep() {
+            let isValid = true;
+            const currentStepElement = document.getElementById(`step${currentStep}`);
+            const requiredFields = currentStepElement.querySelectorAll('[required]');
+
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    showError(field, `${field.name} is required`);
+                    isValid = false;
+                } else {
+                    showSuccess(field);
+                }
+            });
+
+            // Additional validations
+            if (currentStep === 2) {
+                const password = document.getElementById('ownerPassword').value;
+                const confirmPassword = document.getElementById('ownerPasswordConfirm').value;
+
+                if (password.length < 8) {
+                    showError(document.getElementById('ownerPassword'), 'Password must be at least 8 characters');
+                    isValid = false;
+                }
+
+                if (password !== confirmPassword) {
+                    showError(document.getElementById('ownerPasswordConfirm'), 'Passwords do not match');
+                    isValid = false;
+                }
+            }
+
+            return isValid;
+        }
+
+        function showError(field, message) {
+            field.classList.add('error');
+            field.classList.remove('success');
+            const errorElement = document.getElementById(field.name + 'Error');
+            if (errorElement) {
+                errorElement.textContent = message;
+                errorElement.style.display = 'block';
+            }
+        }
+
+        function showSuccess(field) {
+            field.classList.remove('error');
+            field.classList.add('success');
+            const errorElement = document.getElementById(field.name + 'Error');
+            if (errorElement) {
+                errorElement.style.display = 'none';
+            }
+        }
+
+        function setupPlanSelection() {
+            const planCards = document.querySelectorAll('.plan-card');
+            planCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    planCards.forEach(c => c.classList.remove('selected'));
+                    this.classList.add('selected');
+                    document.getElementById('selectedPlan').value = this.dataset.plan;
+                });
+            });
+        }
+
+        function updateReviewContent() {
+            // Hotel Information
+            document.getElementById('reviewHotelName').textContent = document.getElementById('hotelName').value;
+            document.getElementById('reviewAddress').textContent = 
+                `${document.getElementById('address').value}, ${document.getElementById('city').value}, ${document.getElementById('state').value} ${document.getElementById('zipCode').value}`;
+            document.getElementById('reviewPhone').textContent = document.getElementById('phone').value;
+            document.getElementById('reviewEmail').textContent = document.getElementById('email').value;
+            document.getElementById('reviewRoomCount').textContent = document.getElementById('roomCount').value;
+
+            // Owner Account
+            document.getElementById('reviewOwnerName').textContent = 
+                `${document.getElementById('ownerFirstName').value} ${document.getElementById('ownerLastName').value}`;
+            document.getElementById('reviewOwnerEmail').textContent = document.getElementById('ownerEmail').value;
+            document.getElementById('reviewOwnerPhone').textContent = document.getElementById('ownerPhone').value;
+
+            // Subscription
+            const selectedPlan = document.getElementById('selectedPlan').value;
+            const billingCycle = document.getElementById('billingCycle').value;
+            document.getElementById('reviewPlan').textContent = selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1);
+            document.getElementById('reviewBillingCycle').textContent = billingCycle.charAt(0).toUpperCase() + billingCycle.slice(1);
+            
+            const cost = planPricing[selectedPlan][billingCycle === 'annual' ? 'annual' : 'monthly'];
+            document.getElementById('reviewCost').textContent = billingCycle === 'annual' ? 
+                `$${Math.round(cost / 12)}/month (billed annually)` : `$${cost}/month`;
+
+            // Billing
+            document.getElementById('reviewBillingName').textContent = document.getElementById('billingName').value;
+            document.getElementById('reviewBillingAddress').textContent = 
+                `${document.getElementById('billingAddress').value}, ${document.getElementById('billingCity').value}, ${document.getElementById('billingState').value}`;
+            document.getElementById('reviewPaymentMethod').textContent = 
+                document.getElementById('paymentMethod').options[document.getElementById('paymentMethod').selectedIndex].text;
+            document.getElementById('reviewBillingEmail').textContent = document.getElementById('billingEmail').value;
+        }
+
+        function submitForm() {
+            // Simulate form submission
+            document.getElementById('step5').classList.remove('active');
+            document.getElementById('success').classList.add('active');
+            currentStep = 6;
+            updateStepDisplay();
+        }
+
+        function saveDraft() {
+            const formData = new FormData(document.getElementById('onboardingForm'));
+            const draftData = {};
+            for (let [key, value] of formData.entries()) {
+                draftData[key] = value;
+            }
+            localStorage.setItem('hotelOnboardingDraft', JSON.stringify(draftData));
+            alert('Draft saved successfully!');
+        }
+
+        function populateFormFromDraft() {
+            const draftData = localStorage.getItem('hotelOnboardingDraft');
+            if (draftData) {
+                const data = JSON.parse(draftData);
+                Object.keys(data).forEach(key => {
+                    const field = document.getElementById(key) || document.querySelector(`[name="${key}"]`);
+                    if (field) {
+                        field.value = data[key];
+                    }
+                });
+            }
+        }
+
+        function resetForm() {
+            localStorage.removeItem('hotelOnboardingDraft');
+            document.getElementById('onboardingForm').reset();
+            currentStep = 1;
+            updateStepDisplay();
+            updateProgressBar();
+            document.getElementById('success').classList.remove('active');
+            document.getElementById('step1').classList.add('active');
+            document.getElementById('formActions').style.display = 'flex';
+        }
+    </script>
+</body>
+</html>

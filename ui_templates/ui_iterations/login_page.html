@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - HotelOps</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.5;
+            color: #374151;
+            background-color: #F9FAFB;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-container {
+            background: #FFFFFF;
+            border-radius: 0.75rem;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            padding: 3rem 2rem;
+            width: 100%;
+            max-width: 420px;
+            border: 1px solid #E5E7EB;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            color: #FF6B6B;
+            margin-bottom: 0.5rem;
+        }
+
+        .logo p {
+            font-size: 0.875rem;
+            color: #6B7280;
+            font-weight: 500;
+        }
+
+        .form-title {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .form-title h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-title p {
+            font-size: 0.875rem;
+            color: #6B7280;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #E5E7EB;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            background: #FFFFFF;
+            color: #374151;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #FF6B6B;
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+        }
+
+        .form-input.error {
+            border-color: #DC2626;
+        }
+
+        .form-input.success {
+            border-color: #059669;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #6B7280;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .password-toggle:hover {
+            color: #374151;
+        }
+
+        .form-select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #E5E7EB;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            background: #FFFFFF;
+            color: #374151;
+            transition: all 0.2s ease;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236B7280'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1rem;
+            padding-right: 2.5rem;
+        }
+
+        .form-select:focus {
+            outline: none;
+            border-color: #FF6B6B;
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+        }
+
+        .form-validation {
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .form-validation.error {
+            color: #DC2626;
+        }
+
+        .form-validation.success {
+            color: #059669;
+        }
+
+        .form-validation-icon {
+            width: 1rem;
+            height: 1rem;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .checkbox {
+            width: 1rem;
+            height: 1rem;
+            border: 1px solid #E5E7EB;
+            border-radius: 0.25rem;
+            background: #FFFFFF;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .checkbox:checked {
+            background: #FF6B6B;
+            border-color: #FF6B6B;
+        }
+
+        .checkbox:checked::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0.375rem;
+            height: 0.1875rem;
+            border: solid #FFFFFF;
+            border-width: 0 0 2px 2px;
+            transform: translate(-50%, -60%) rotate(-45deg);
+        }
+
+        .checkbox-label {
+            font-size: 0.875rem;
+            color: #374151;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .btn-primary {
+            width: 100%;
+            background-color: #FF6B6B;
+            color: #FFFFFF;
+            padding: 0.875rem 1.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-primary:hover {
+            background-color: #FF5252;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+        }
+
+        .btn-primary:disabled {
+            background-color: #D1D5DB;
+            color: #9CA3AF;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .form-links {
+            text-align: center;
+        }
+
+        .form-link {
+            font-size: 0.875rem;
+            color: #FF6B6B;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .form-link:hover {
+            color: #FF5252;
+        }
+
+        .form-link.secondary {
+            color: #6B7280;
+            margin-top: 1rem;
+            display: inline-block;
+        }
+
+        .form-link.secondary:hover {
+            color: #374151;
+        }
+
+        .divider {
+            margin: 1.5rem 0;
+            text-align: center;
+            position: relative;
+            color: #6B7280;
+            font-size: 0.875rem;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: #E5E7EB;
+            z-index: 1;
+        }
+
+        .divider span {
+            background: #FFFFFF;
+            padding: 0 1rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Loading state */
+        .btn-primary.loading {
+            position: relative;
+            color: transparent;
+        }
+
+        .btn-primary.loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 1rem;
+            height: 1rem;
+            margin: -0.5rem 0 0 -0.5rem;
+            border: 2px solid #FFFFFF;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 480px) {
+            .login-container {
+                margin: 1rem;
+                padding: 2rem 1.5rem;
+            }
+        }
+
+        /* Hidden elements for accessibility */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <!-- Logo and Brand -->
+        <div class="logo">
+            <h1>HotelOps</h1>
+            <p>Hotel Management Platform</p>
+        </div>
+
+        <!-- Form Title -->
+        <div class="form-title">
+            <h2>Login to Your Account</h2>
+            <p>Enter your credentials to access the dashboard</p>
+        </div>
+
+        <!-- Login Form -->
+        <form id="loginForm" novalidate>
+            <!-- Email Field -->
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <div class="input-wrapper">
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        class="form-input"
+                        placeholder="Enter your email address"
+                        required
+                        autocomplete="email"
+                    >
+                </div>
+                <div class="form-validation" id="emailValidation" style="display: none;">
+                    <svg class="form-validation-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                    <span id="emailValidationText"></span>
+                </div>
+            </div>
+
+            <!-- Password Field -->
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="input-wrapper">
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        class="form-input"
+                        placeholder="Enter your password"
+                        required
+                        autocomplete="current-password"
+                    >
+                    <button type="button" class="password-toggle" id="passwordToggle">
+                        Show
+                    </button>
+                </div>
+                <div class="form-validation" id="passwordValidation" style="display: none;">
+                    <svg class="form-validation-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                    <span id="passwordValidationText"></span>
+                </div>
+            </div>
+
+            <!-- Role Selection -->
+            <div class="form-group">
+                <label for="role">Select Your Role</label>
+                <select id="role" name="role" class="form-select" required>
+                    <option value="">Choose your role...</option>
+                    <option value="platform_admin">Platform Admin</option>
+                    <option value="hotel_owner">Hotel Owner</option>
+                    <option value="hotel_manager">Hotel Manager</option>
+                    <option value="front_desk">Front Desk Staff</option>
+                </select>
+                <div class="form-validation" id="roleValidation" style="display: none;">
+                    <svg class="form-validation-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                    <span id="roleValidationText"></span>
+                </div>
+            </div>
+
+            <!-- Remember Me -->
+            <div class="checkbox-group">
+                <input type="checkbox" id="rememberMe" name="rememberMe" class="checkbox">
+                <label for="rememberMe" class="checkbox-label">Remember me for 30 days</label>
+            </div>
+
+            <!-- Login Button -->
+            <button type="submit" class="btn-primary" id="loginButton">
+                Sign In to Dashboard
+            </button>
+
+            <!-- Forgot Password Link -->
+            <div class="form-links">
+                <a href="#" class="form-link" id="forgotPasswordLink">Forgot your password?</a>
+            </div>
+
+            <!-- Divider -->
+            <div class="divider">
+                <span>or</span>
+            </div>
+
+            <!-- Back to Home -->
+            <div class="form-links">
+                <a href="Landing_page.html" class="form-link secondary">← Back to HotelOps Home</a>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        // Form validation and interactivity
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('loginForm');
+            const emailInput = document.getElementById('email');
+            const passwordInput = document.getElementById('password');
+            const roleSelect = document.getElementById('role');
+            const passwordToggle = document.getElementById('passwordToggle');
+            const loginButton = document.getElementById('loginButton');
+
+            // Password visibility toggle
+            passwordToggle.addEventListener('click', function() {
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                this.textContent = type === 'password' ? 'Show' : 'Hide';
+            });
+
+            // Email validation
+            function validateEmail(email) {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return emailRegex.test(email);
+            }
+
+            // Show validation message
+            function showValidation(inputId, message, type = 'error') {
+                const input = document.getElementById(inputId);
+                const validation = document.getElementById(inputId + 'Validation');
+                const validationText = document.getElementById(inputId + 'ValidationText');
+                
+                input.className = `form-input ${type}`;
+                validation.className = `form-validation ${type}`;
+                validation.style.display = 'flex';
+                validationText.textContent = message;
+            }
+
+            // Hide validation message
+            function hideValidation(inputId) {
+                const input = document.getElementById(inputId);
+                const validation = document.getElementById(inputId + 'Validation');
+                
+                input.className = 'form-input';
+                validation.style.display = 'none';
+            }
+
+            // Real-time email validation
+            emailInput.addEventListener('blur', function() {
+                const email = this.value.trim();
+                if (email && !validateEmail(email)) {
+                    showValidation('email', 'Please enter a valid email address');
+                } else if (email && validateEmail(email)) {
+                    showValidation('email', 'Email format is valid', 'success');
+                } else {
+                    hideValidation('email');
+                }
+            });
+
+            // Real-time password validation
+            passwordInput.addEventListener('blur', function() {
+                const password = this.value;
+                if (password && password.length < 8) {
+                    showValidation('password', 'Password must be at least 8 characters long');
+                } else if (password && password.length >= 8) {
+                    showValidation('password', 'Password length is acceptable', 'success');
+                } else {
+                    hideValidation('password');
+                }
+            });
+
+            // Role validation
+            roleSelect.addEventListener('change', function() {
+                if (this.value) {
+                    hideValidation('role');
+                }
+            });
+
+            // Form submission
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const email = emailInput.value.trim();
+                const password = passwordInput.value;
+                const role = roleSelect.value;
+                
+                let isValid = true;
+
+                // Validate email
+                if (!email) {
+                    showValidation('email', 'Email address is required');
+                    isValid = false;
+                } else if (!validateEmail(email)) {
+                    showValidation('email', 'Please enter a valid email address');
+                    isValid = false;
+                }
+
+                // Validate password
+                if (!password) {
+                    showValidation('password', 'Password is required');
+                    isValid = false;
+                } else if (password.length < 8) {
+                    showValidation('password', 'Password must be at least 8 characters long');
+                    isValid = false;
+                }
+
+                // Validate role
+                if (!role) {
+                    showValidation('role', 'Please select your role');
+                    isValid = false;
+                }
+
+                if (isValid) {
+                    // Show loading state
+                    loginButton.classList.add('loading');
+                    loginButton.disabled = true;
+
+                    // Simulate login process
+                    setTimeout(() => {
+                        // Reset button state
+                        loginButton.classList.remove('loading');
+                        loginButton.disabled = false;
+                        
+                        // In a real application, you would make an API call here
+                        alert(`Login attempt:\nEmail: ${email}\nRole: ${role}\nRemember Me: ${document.getElementById('rememberMe').checked}`);
+                    }, 2000);
+                }
+            });
+
+            // Clear validation on input
+            [emailInput, passwordInput, roleSelect].forEach(input => {
+                input.addEventListener('input', function() {
+                    const inputId = this.id;
+                    if (this.value.trim()) {
+                        hideValidation(inputId);
+                    }
+                });
+            });
+
+            // Forgot password handling
+            document.getElementById('forgotPasswordLink').addEventListener('click', function(e) {
+                e.preventDefault();
+                alert('Password reset functionality would be implemented here. You would be redirected to a password reset form.');
+            });
+        });
+    </script>
+</body>
+</html>

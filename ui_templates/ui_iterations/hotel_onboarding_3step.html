@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add New Hotel - HotelOps Platform Admin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.5;
+            color: #374151;
+            background-color: #F9FAFB;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: #6B7280;
+            font-size: 1.125rem;
+        }
+
+        /* Step Progress */
+        .step-progress {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        .step-progress::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: #E5E7EB;
+            z-index: 1;
+        }
+
+        .progress-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            height: 2px;
+            background: #FF6B6B;
+            z-index: 2;
+            transition: width 0.3s ease;
+        }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 3;
+            background: #F9FAFB;
+            padding: 0 1rem;
+        }
+
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 2px solid #E5E7EB;
+            background: #FFFFFF;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: #6B7280;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .step.active .step-circle {
+            border-color: #FF6B6B;
+            background: #FF6B6B;
+            color: #FFFFFF;
+        }
+
+        .step.completed .step-circle {
+            border-color: #10B981;
+            background: #10B981;
+            color: #FFFFFF;
+        }
+
+        .step-label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #6B7280;
+            text-align: center;
+        }
+
+        .step.active .step-label {
+            color: #FF6B6B;
+        }
+
+        /* Form Container */
+        .form-container {
+            background: #FFFFFF;
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .step-content {
+            display: none;
+        }
+
+        .step-content.active {
+            display: block;
+        }
+
+        .step-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-description {
+            color: #6B7280;
+            margin-bottom: 2rem;
+        }
+
+        /* Form Groups */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-label.required::after {
+            content: '*';
+            color: #EF4444;
+            margin-left: 0.25rem;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #D1D5DB;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            background: #FFFFFF;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #FF6B6B;
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+        }
+
+        .form-textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #D1D5DB;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            background: #FFFFFF;
+            min-height: 100px;
+            resize: vertical;
+            transition: border-color 0.2s ease;
+        }
+
+        .form-textarea:focus {
+            outline: none;
+            border-color: #FF6B6B;
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+        }
+
+        /* Review Section */
+        .review-section {
+            margin-bottom: 2rem;
+        }
+
+        .review-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #E5E7EB;
+        }
+
+        .review-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #F3F4F6;
+        }
+
+        .review-item:last-child {
+            border-bottom: none;
+        }
+
+        .review-label {
+            font-size: 0.875rem;
+            color: #6B7280;
+        }
+
+        .review-value {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #111827;
+            text-align: right;
+        }
+
+        /* Buttons */
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #E5E7EB;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background-color: #FF6B6B;
+            color: #FFFFFF;
+        }
+
+        .btn-primary:hover {
+            background-color: #FF5252;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+        }
+
+        .btn-secondary {
+            background-color: #FFFFFF;
+            color: #374151;
+            border: 1px solid #D1D5DB;
+        }
+
+        .btn-secondary:hover {
+            background-color: #F9FAFB;
+            border-color: #9CA3AF;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Success Message */
+        .success-message {
+            background: #D1FAE5;
+            border: 1px solid #A7F3D0;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+        }
+
+        .success-title {
+            font-weight: 600;
+            color: #065F46;
+            margin-bottom: 0.5rem;
+        }
+
+        .success-text {
+            color: #047857;
+            font-size: 0.875rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .step-progress {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .step-progress::before {
+                display: none;
+            }
+
+            .progress-line {
+                display: none;
+            }
+
+            .form-actions {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Add New Hotel</h1>
+            <p>Create a new hotel account with owner credentials</p>
+        </div>
+
+        <!-- Step Progress -->
+        <div class="step-progress">
+            <div class="progress-line" id="progressLine"></div>
+            
+            <div class="step active" id="step1">
+                <div class="step-circle">1</div>
+                <div class="step-label">Hotel & Owner</div>
+            </div>
+            
+            <div class="step" id="step2">
+                <div class="step-circle">2</div>
+                <div class="step-label">Subscription</div>
+            </div>
+            
+            <div class="step" id="step3">
+                <div class="step-circle">3</div>
+                <div class="step-label">Review</div>
+            </div>
+        </div>
+
+        <!-- Form Container -->
+        <div class="form-container">
+            <!-- Step 1: Hotel & Owner Information -->
+            <div class="step-content active" id="content1">
+                <h2 class="step-title">Hotel & Owner Information</h2>
+                <p class="step-description">Enter the basic hotel details and create owner account</p>
+
+                <form id="onboardingForm">
+                    <div class="review-section">
+                        <div class="review-title">🏨 Hotel Details</div>
+                        
+                        <div class="form-group">
+                            <label class="form-label required" for="hotelName">Hotel Name</label>
+                            <input type="text" id="hotelName" name="hotelName" class="form-input" 
+                                   placeholder="e.g., Grand Plaza Resort" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label required" for="hotelAddress">Hotel Address</label>
+                            <textarea id="hotelAddress" name="hotelAddress" class="form-textarea" 
+                                      placeholder="Full address including city, state, country" required></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label required" for="hotelPhone">Hotel Phone</label>
+                            <input type="tel" id="hotelPhone" name="hotelPhone" class="form-input" 
+                                   placeholder="+91-9876543210" required>
+                        </div>
+                    </div>
+
+                    <div class="review-section">
+                        <div class="review-title">👤 Owner Account</div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label required" for="ownerName">Owner Name</label>
+                                <input type="text" id="ownerName" name="ownerName" class="form-input" 
+                                       placeholder="e.g., John Smith" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="ownerPhone">Owner Phone (Optional)</label>
+                                <input type="tel" id="ownerPhone" name="ownerPhone" class="form-input" 
+                                       placeholder="+91-9876543211">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label required" for="ownerEmail">Owner Email</label>
+                            <input type="email" id="ownerEmail" name="ownerEmail" class="form-input" 
+                                   placeholder="owner@hotel.com" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label required" for="ownerPassword">Temporary Password</label>
+                            <input type="password" id="ownerPassword" name="ownerPassword" class="form-input" 
+                                   placeholder="Min 8 chars with uppercase, lowercase, number" required>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Step 2: Subscription Details -->
+            <div class="step-content" id="content2">
+                <h2 class="step-title">Subscription Details</h2>
+                <p class="step-description">Set trial period and monthly pricing for this hotel</p>
+
+                <div class="review-section">
+                    <div class="review-title">📅 Trial Period</div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label required" for="trialDays">Trial Duration (Days)</label>
+                            <input type="number" id="trialDays" name="trialDays" class="form-input" 
+                                   value="30" min="1" max="90" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="trialEndDate">Trial End Date</label>
+                            <input type="date" id="trialEndDate" name="trialEndDate" class="form-input" readonly>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="review-section">
+                    <div class="review-title">💰 Pricing</div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label required" for="monthlyRate">Monthly Rate (₹)</label>
+                            <input type="number" id="monthlyRate" name="monthlyRate" class="form-input" 
+                                   value="5000" min="1000" step="500" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="annualRate">Annual Rate (₹)</label>
+                            <input type="text" id="annualRate" name="annualRate" class="form-input" readonly>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="subscriptionNotes">Notes (Optional)</label>
+                        <textarea id="subscriptionNotes" name="subscriptionNotes" class="form-textarea" 
+                                  placeholder="Any special notes about pricing or terms"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Review & Finalize -->
+            <div class="step-content" id="content3">
+                <h2 class="step-title">Review & Finalize</h2>
+                <p class="step-description">Review all information before creating the hotel account</p>
+
+                <div class="success-message" id="successMessage">
+                    <div class="success-title">✅ Hotel Created Successfully!</div>
+                    <div class="success-text">The hotel account has been created and is waiting for owner setup.</div>
+                </div>
+
+                <div class="review-section">
+                    <div class="review-title">🏨 Hotel Information</div>
+                    <div class="review-item">
+                        <span class="review-label">Hotel Name:</span>
+                        <span class="review-value" id="reviewHotelName">-</span>
+                    </div>
+                    <div class="review-item">
+                        <span class="review-label">Address:</span>
+                        <span class="review-value" id="reviewHotelAddress">-</span>
+                    </div>
+                    <div class="review-item">
+                        <span class="review-label">Phone:</span>
+                        <span class="review-value" id="reviewHotelPhone">-</span>
+                    </div>
+                </div>
+
+                <div class="review-section">
+                    <div class="review-title">👤 Owner Account</div>
+                    <div class="review-item">
+                        <span class="review-label">Name:</span>
+                        <span class="review-value" id="reviewOwnerName">-</span>
+                    </div>
+                    <div class="review-item">
+                        <span class="review-label">Email:</span>
+                        <span class="review-value" id="reviewOwnerEmail">-</span>
+                    </div>
+                    <div class="review-item">
+                        <span class="review-label">Phone:</span>
+                        <span class="review-value" id="reviewOwnerPhone">-</span>
+                    </div>
+                </div>
+
+                <div class="review-section">
+                    <div class="review-title">📋 Subscription</div>
+                    <div class="review-item">
+                        <span class="review-label">Trial Period:</span>
+                        <span class="review-value" id="reviewTrialDays">-</span>
+                    </div>
+                    <div class="review-item">
+                        <span class="review-label">Trial End Date:</span>
+                        <span class="review-value" id="reviewTrialEndDate">-</span>
+                    </div>
+                    <div class="review-item">
+                        <span class="review-label">Monthly Rate:</span>
+                        <span class="review-value" id="reviewMonthlyRate">-</span>
+                    </div>
+                    <div class="review-item">
+                        <span class="review-label">Initial Status:</span>
+                        <span class="review-value">⏳ Setup Incomplete</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" id="prevBtn" style="display: none;">
+                    ← Previous
+                </button>
+                
+                <div></div>
+                
+                <button type="button" class="btn btn-primary" id="nextBtn">
+                    Next →
+                </button>
+                
+                <button type="button" class="btn btn-primary" id="createBtn" style="display: none;">
+                    🏨 Create Hotel
+                </button>
+
+                <button type="button" class="btn btn-secondary" id="backToDashboard" style="display: none;">
+                    ← Back to Dashboard
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 1;
+        const totalSteps = 3;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateTrialEndDate();
+            updateAnnualRate();
+        });
+
+        // Step navigation
+        document.getElementById('nextBtn').addEventListener('click', function() {
+            if (validateCurrentStep()) {
+                if (currentStep < totalSteps) {
+                    currentStep++;
+                    updateStep();
+                    if (currentStep === 3) {
+                        updateReview();
+                    }
+                }
+            }
+        });
+
+        document.getElementById('prevBtn').addEventListener('click', function() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateStep();
+            }
+        });
+
+        document.getElementById('createBtn').addEventListener('click', function() {
+            createHotel();
+        });
+
+        // Auto-calculate trial end date
+        document.getElementById('trialDays').addEventListener('input', updateTrialEndDate);
+
+        // Auto-calculate annual rate
+        document.getElementById('monthlyRate').addEventListener('input', updateAnnualRate);
+
+        function updateStep() {
+            // Update step indicators
+            for (let i = 1; i <= totalSteps; i++) {
+                const step = document.getElementById(`step${i}`);
+                const content = document.getElementById(`content${i}`);
+                
+                if (i < currentStep) {
+                    step.className = 'step completed';
+                } else if (i === currentStep) {
+                    step.className = 'step active';
+                } else {
+                    step.className = 'step';
+                }
+                
+                content.classList.toggle('active', i === currentStep);
+            }
+
+            // Update progress line
+            const progressLine = document.getElementById('progressLine');
+            progressLine.style.width = `${((currentStep - 1) / (totalSteps - 1)) * 100}%`;
+
+            // Update buttons
+            document.getElementById('prevBtn').style.display = currentStep > 1 ? 'block' : 'none';
+            document.getElementById('nextBtn').style.display = currentStep < totalSteps ? 'block' : 'none';
+            document.getElementById('createBtn').style.display = currentStep === totalSteps ? 'block' : 'none';
+        }
+
+        function validateCurrentStep() {
+            if (currentStep === 1) {
+                const required = ['hotelName', 'hotelAddress', 'hotelPhone', 'ownerName', 'ownerEmail', 'ownerPassword'];
+                for (const field of required) {
+                    const element = document.getElementById(field);
+                    if (!element.value.trim()) {
+                        element.focus();
+                        alert(`Please fill in ${element.previousElementSibling.textContent.replace('*', '')}`);
+                        return false;
+                    }
+                }
+                
+                // Validate email format
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                const email = document.getElementById('ownerEmail').value;
+                if (!emailRegex.test(email)) {
+                    alert('Please enter a valid email address');
+                    document.getElementById('ownerEmail').focus();
+                    return false;
+                }
+
+                // Validate password strength
+                const password = document.getElementById('ownerPassword').value;
+                if (password.length < 8 || !/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(password)) {
+                    alert('Password must be at least 8 characters with uppercase, lowercase, and number');
+                    document.getElementById('ownerPassword').focus();
+                    return false;
+                }
+            }
+
+            if (currentStep === 2) {
+                const trialDays = parseInt(document.getElementById('trialDays').value);
+                const monthlyRate = parseInt(document.getElementById('monthlyRate').value);
+                
+                if (!trialDays || trialDays < 1 || trialDays > 90) {
+                    alert('Trial days must be between 1 and 90');
+                    document.getElementById('trialDays').focus();
+                    return false;
+                }
+
+                if (!monthlyRate || monthlyRate < 1000) {
+                    alert('Monthly rate must be at least ₹1000');
+                    document.getElementById('monthlyRate').focus();
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        function updateTrialEndDate() {
+            const trialDays = parseInt(document.getElementById('trialDays').value) || 30;
+            const endDate = new Date();
+            endDate.setDate(endDate.getDate() + trialDays);
+            document.getElementById('trialEndDate').value = endDate.toISOString().split('T')[0];
+        }
+
+        function updateAnnualRate() {
+            const monthlyRate = parseInt(document.getElementById('monthlyRate').value) || 5000;
+            const annualRate = monthlyRate * 12;
+            document.getElementById('annualRate').value = `₹${annualRate.toLocaleString('en-IN')}`;
+        }
+
+        function updateReview() {
+            document.getElementById('reviewHotelName').textContent = document.getElementById('hotelName').value;
+            document.getElementById('reviewHotelAddress').textContent = document.getElementById('hotelAddress').value;
+            document.getElementById('reviewHotelPhone').textContent = document.getElementById('hotelPhone').value;
+            document.getElementById('reviewOwnerName').textContent = document.getElementById('ownerName').value;
+            document.getElementById('reviewOwnerEmail').textContent = document.getElementById('ownerEmail').value;
+            document.getElementById('reviewOwnerPhone').textContent = document.getElementById('ownerPhone').value || 'Not provided';
+            document.getElementById('reviewTrialDays').textContent = `${document.getElementById('trialDays').value} days`;
+            document.getElementById('reviewTrialEndDate').textContent = document.getElementById('trialEndDate').value;
+            document.getElementById('reviewMonthlyRate').textContent = `₹${parseInt(document.getElementById('monthlyRate').value).toLocaleString('en-IN')}/month`;
+        }
+
+        async function createHotel() {
+            const createBtn = document.getElementById('createBtn');
+            createBtn.disabled = true;
+            createBtn.innerHTML = '⏳ Creating...';
+
+            try {
+                // Step 1: Create hotel with basic info
+                const hotelData = {
+                    hotel: {
+                        name: document.getElementById('hotelName').value,
+                        address: document.getElementById('hotelAddress').value,
+                        phone: document.getElementById('hotelPhone').value
+                    },
+                    owner: {
+                        name: document.getElementById('ownerName').value,
+                        email: document.getElementById('ownerEmail').value,
+                        password: document.getElementById('ownerPassword').value,
+                        phone: document.getElementById('ownerPhone').value || undefined
+                    }
+                };
+
+                const hotelResponse = await fetch('/api/platform/setup-hotel', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+                    },
+                    body: JSON.stringify(hotelData)
+                });
+
+                if (!hotelResponse.ok) {
+                    const error = await hotelResponse.json();
+                    throw new Error(error.message || 'Failed to create hotel');
+                }
+
+                const result = await hotelResponse.json();
+                const hotelId = result.data.hotel.id;
+
+                // Step 2: Update subscription details
+                const trialDays = parseInt(document.getElementById('trialDays').value);
+                const endDate = new Date();
+                endDate.setDate(endDate.getDate() + trialDays);
+
+                const subscriptionData = {
+                    monthlyRate: parseFloat(document.getElementById('monthlyRate').value),
+                    subscriptionEndDate: endDate.toISOString(),
+                    notes: document.getElementById('subscriptionNotes').value || `Created by admin with ${trialDays} day trial`
+                };
+
+                const subscriptionResponse = await fetch(`/api/platform/hotels/${hotelId}/subscription`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('adminToken')}`
+                    },
+                    body: JSON.stringify(subscriptionData)
+                });
+
+                if (!subscriptionResponse.ok) {
+                    console.warn('Failed to update subscription details, but hotel was created');
+                }
+
+                // Show success message
+                document.getElementById('successMessage').classList.add('show');
+                createBtn.style.display = 'none';
+                document.getElementById('backToDashboard').style.display = 'block';
+
+            } catch (error) {
+                alert('Error creating hotel: ' + error.message);
+                createBtn.disabled = false;
+                createBtn.innerHTML = '🏨 Create Hotel';
+            }
+        }
+
+        document.getElementById('backToDashboard').addEventListener('click', function() {
+            window.location.href = '/dashboard.html';
+        });
+    </script>
+</body>
+</html>
