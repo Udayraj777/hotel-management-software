@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const { hashPassword, comparePassword, generateToken } = require('../utils/auth');
+const { updateHotelSetupStatus } = require('../utils/hotelSetupChecker');
 const { z } = require('zod');
 
 const prisma = new PrismaClient();
@@ -197,13 +198,27 @@ const resetPassword = async (req, res) => {
 
     const passwordHash = await hashPassword(newPassword);
 
-    await prisma.user.update({
+    const updatedUser = await prisma.user.update({
       where: { id: parseInt(userId) },
       data: { 
         passwordHash,
         firstLoginCompleted: true
+      },
+      include: {
+        hotel: {
+          select: { id: true }
+        }
       }
     });
+
+    // Check if hotel setup is now complete (owner just completed first login)
+    if (updatedUser.hotelId && updatedUser.role === 'hotel_owner') {
+      console.log(`[Setup Check] Owner completed first login for hotel ${updatedUser.hotelId}`);
+      // Async check and update hotel setup status
+      updateHotelSetupStatus(updatedUser.hotelId).catch(error => {
+        console.error('Error updating hotel setup status after owner first login:', error);
+      });
+    }
 
     res.json({ message: 'Password reset successfully' });
 

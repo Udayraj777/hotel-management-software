@@ -39,6 +39,9 @@ model Hotel {
   lastReminderSent        DateTime? @map("last_reminder_sent")
   // Track when you last sent reminder to avoid spam
   
+  // Setup Status
+  setupCompleted          Boolean  @default(false) @map("setup_completed")
+  
   // Metadata
   createdAt               DateTime @default(now()) @map("created_at")
   isActive                Boolean  @default(true) @map("is_active")

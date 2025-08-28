@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const { z } = require('zod');
 const { hashPassword } = require('../utils/auth');
+const { getHotelSetupStatus } = require('../utils/hotelSetupChecker');
 
 const prisma = new PrismaClient();
 
@@ -103,6 +104,7 @@ const setupHotel = async (req, res) => {
           subscriptionStatus: 'trial',
           subscriptionEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
           monthlyRate: 5000.00, // Default rate
+          setupCompleted: false, // Requires owner setup
           isActive: true
         }
       });
@@ -243,7 +245,597 @@ const getPlatformStats = async (req, res) => {
   }
 };
 
+// Get all hotels with detailed information and filtering
+const getAllHotelsDetailed = async (req, res) => {
+  try {
+    const { page = 1, limit = 10, status, search, sortBy = 'createdAt', sortOrder = 'desc' } = req.query;
+    
+    // Build filter conditions
+    const whereConditions = {};
+    
+    // Status filtering
+    if (status && ['active', 'trial', 'expired', 'suspended'].includes(status)) {
+      if (status === 'suspended') {
+        whereConditions.isActive = false;
+      } else {
+        whereConditions.subscriptionStatus = status;
+        if (status !== 'expired') {
+          whereConditions.isActive = true;
+        }
+      }
+    }
+    
+    // Search filtering
+    if (search) {
+      whereConditions.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { ownerEmail: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search } }
+      ];
+    }
+
+    // Valid sort fields
+    const validSortFields = ['name', 'createdAt', 'subscriptionEndDate', 'subscriptionStatus'];
+    const sortField = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
+    const sortDirection = sortOrder === 'asc' ? 'asc' : 'desc';
+
+    const [hotels, totalCount] = await Promise.all([
+      prisma.hotel.findMany({
+        where: whereConditions,
+        include: {
+          users: {
+            where: { role: 'hotel_owner' },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              lastLogin: true,
+              createdAt: true,
+              isActive: true
+            }
+          },
+          _count: {
+            select: {
+              users: true,
+              rooms: true,
+              bookings: {
+                where: {
+                  createdAt: {
+                    gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
+                  }
+                }
+              }
+            }
+          }
+        },
+        orderBy: { [sortField]: sortDirection },
+        skip: (parseInt(page) - 1) * parseInt(limit),
+        take: parseInt(limit)
+      }),
+      prisma.hotel.count({ where: whereConditions })
+    ]);
+
+    // Calculate enhanced details for each hotel
+    const hotelsWithDetails = hotels.map(hotel => {
+      const now = new Date();
+      let daysRemaining = 0;
+      let statusColor = 'green';
+      let statusText = hotel.subscriptionStatus;
+      let canSuspend = true;
+      let canActivate = false;
+
+      // Calculate days remaining
+      if (hotel.subscriptionEndDate) {
+        daysRemaining = Math.ceil((hotel.subscriptionEndDate - now) / (1000 * 60 * 60 * 24));
+      }
+
+      // Determine status and colors - prioritize setup status
+      if (!hotel.isActive) {
+        statusColor = 'red';
+        statusText = 'suspended';
+        canSuspend = false;
+        canActivate = true;
+      } else if (!hotel.setupCompleted) {
+        statusColor = 'yellow';
+        statusText = 'setup_incomplete';
+        canSuspend = false; // Can't suspend incomplete setups
+      } else if (hotel.subscriptionStatus === 'expired' || daysRemaining <= 0) {
+        statusColor = 'red';
+        statusText = 'expired';
+      } else if (hotel.subscriptionStatus === 'trial' && daysRemaining <= 7) {
+        statusColor = 'yellow';
+        statusText = 'trial (expiring soon)';
+      } else if (hotel.subscriptionStatus === 'trial') {
+        statusColor = 'blue';
+        statusText = 'trial';
+      } else {
+        statusColor = 'green';
+        statusText = 'active';
+      }
+
+      const owner = hotel.users[0] || null;
+
+      return {
+        id: hotel.id,
+        name: hotel.name,
+        ownerEmail: hotel.ownerEmail,
+        phone: hotel.phone,
+        address: hotel.address,
+        subscriptionStatus: statusText,
+        subscriptionEndDate: hotel.subscriptionEndDate,
+        monthlyRate: parseFloat(hotel.monthlyRate) || 0,
+        daysRemaining: Math.max(0, daysRemaining),
+        isActive: hotel.isActive,
+        setupCompleted: hotel.setupCompleted,
+        statusColor,
+        canSuspend,
+        canActivate,
+        createdAt: hotel.createdAt,
+        lastReminderSent: hotel.lastReminderSent,
+        paymentHistory: hotel.paymentHistory,
+        owner: owner ? {
+          ...owner,
+          daysSinceLastLogin: owner.lastLogin 
+            ? Math.floor((now - new Date(owner.lastLogin)) / (1000 * 60 * 60 * 24))
+            : null
+        } : null,
+        stats: {
+          totalUsers: hotel._count.users,
+          totalRooms: hotel._count.rooms,
+          bookingsLast30Days: hotel._count.bookings
+        }
+      };
+    });
+
+    res.json({
+      message: 'Hotels retrieved successfully',
+      data: {
+        hotels: hotelsWithDetails,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: totalCount,
+          pages: Math.ceil(totalCount / parseInt(limit))
+        },
+        filters: {
+          status,
+          search,
+          sortBy: sortField,
+          sortOrder: sortDirection
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Get all hotels detailed error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Suspend or Activate Hotel
+const updateHotelStatus = async (req, res) => {
+  try {
+    const { hotelId } = req.params;
+    const { action, reason } = req.body; // action: 'suspend' | 'activate'
+
+    // Validation
+    if (!['suspend', 'activate'].includes(action)) {
+      return res.status(400).json({ 
+        error: 'Invalid action',
+        message: 'Action must be either "suspend" or "activate"'
+      });
+    }
+
+    if (!reason || reason.trim().length < 5) {
+      return res.status(400).json({ 
+        error: 'Reason required',
+        message: 'Please provide a reason (minimum 5 characters)'
+      });
+    }
+
+    const hotel = await prisma.hotel.findUnique({
+      where: { id: parseInt(hotelId) },
+      include: {
+        users: {
+          where: { role: 'hotel_owner' },
+          select: { name: true, email: true }
+        }
+      }
+    });
+
+    if (!hotel) {
+      return res.status(404).json({ error: 'Hotel not found' });
+    }
+
+    // Check current status
+    if (action === 'suspend' && !hotel.isActive) {
+      return res.status(400).json({ 
+        error: 'Hotel is already suspended' 
+      });
+    }
+
+    if (action === 'activate' && hotel.isActive) {
+      return res.status(400).json({ 
+        error: 'Hotel is already active' 
+      });
+    }
+
+    // Update hotel status
+    const timestamp = new Date().toISOString();
+    const actionNote = `[${timestamp}] ${action.toUpperCase()} by admin ${req.user.userId}: ${reason}`;
+    
+    const updatedHotel = await prisma.hotel.update({
+      where: { id: parseInt(hotelId) },
+      data: {
+        isActive: action === 'activate',
+        paymentHistory: hotel.paymentHistory 
+          ? `${hotel.paymentHistory}\n${actionNote}`
+          : actionNote
+      }
+    });
+
+    // Log the action for audit trail
+    console.log(`🏨 Admin Action: ${action} hotel "${hotel.name}" (ID: ${hotel.id}) by admin ${req.user.userId}. Reason: ${reason}`);
+
+    // Send WebSocket notification to hotel users
+    if (global.socketServer) {
+      const notificationData = {
+        type: 'hotel_status_changed',
+        hotelId: hotel.id,
+        hotelName: hotel.name,
+        action,
+        reason,
+        adminId: req.user.userId,
+        timestamp: new Date().toISOString()
+      };
+      
+      if (action === 'suspend') {
+        // Notify all hotel users about suspension
+        global.socketServer.broadcastToHotel(hotel.id, 'hotel_suspended', notificationData);
+      } else {
+        // Notify about reactivation
+        global.socketServer.broadcastToHotel(hotel.id, 'hotel_reactivated', notificationData);
+      }
+    }
+
+    res.json({
+      success: true,
+      message: `Hotel ${action}d successfully`,
+      data: {
+        hotelId: updatedHotel.id,
+        hotelName: updatedHotel.name,
+        isActive: updatedHotel.isActive,
+        action,
+        reason,
+        actionBy: req.user.userId,
+        actionAt: timestamp
+      }
+    });
+
+  } catch (error) {
+    console.error('Update hotel status error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Update hotel subscription details
+const updateHotelSubscription = async (req, res) => {
+  try {
+    const { hotelId } = req.params;
+    const { subscriptionStatus, monthlyRate, subscriptionEndDate, notes } = req.body;
+
+    // Validation
+    const validStatuses = ['trial', 'active', 'expired'];
+    if (subscriptionStatus && !validStatuses.includes(subscriptionStatus)) {
+      return res.status(400).json({ 
+        error: 'Invalid subscription status',
+        validStatuses 
+      });
+    }
+
+    if (monthlyRate && (isNaN(monthlyRate) || parseFloat(monthlyRate) < 0)) {
+      return res.status(400).json({ 
+        error: 'Invalid monthly rate',
+        message: 'Monthly rate must be a positive number'
+      });
+    }
+
+    if (subscriptionEndDate && new Date(subscriptionEndDate) < new Date()) {
+      return res.status(400).json({ 
+        error: 'Invalid subscription end date',
+        message: 'End date cannot be in the past'
+      });
+    }
+
+    const hotel = await prisma.hotel.findUnique({
+      where: { id: parseInt(hotelId) }
+    });
+
+    if (!hotel) {
+      return res.status(404).json({ error: 'Hotel not found' });
+    }
+
+    // Prepare update data
+    const updateData = {};
+    if (subscriptionStatus) updateData.subscriptionStatus = subscriptionStatus;
+    if (monthlyRate) updateData.monthlyRate = parseFloat(monthlyRate);
+    if (subscriptionEndDate) updateData.subscriptionEndDate = new Date(subscriptionEndDate);
+    
+    // Add notes to payment history
+    if (notes || Object.keys(updateData).length > 0) {
+      const timestamp = new Date().toISOString();
+      const changes = Object.keys(updateData).map(key => 
+        `${key}: ${updateData[key]}`
+      ).join(', ');
+      
+      const historyNote = `[${timestamp}] Subscription updated by admin ${req.user.userId}` +
+        (changes ? `: ${changes}` : '') +
+        (notes ? `. Notes: ${notes}` : '');
+        
+      updateData.paymentHistory = hotel.paymentHistory 
+        ? `${hotel.paymentHistory}\n${historyNote}`
+        : historyNote;
+    }
+
+    const updatedHotel = await prisma.hotel.update({
+      where: { id: parseInt(hotelId) },
+      data: updateData
+    });
+
+    console.log(`💰 Subscription updated for hotel "${hotel.name}" (ID: ${hotel.id}) by admin ${req.user.userId}`);
+
+    res.json({
+      success: true,
+      message: 'Hotel subscription updated successfully',
+      data: {
+        hotelId: updatedHotel.id,
+        hotelName: updatedHotel.name,
+        subscriptionStatus: updatedHotel.subscriptionStatus,
+        monthlyRate: parseFloat(updatedHotel.monthlyRate),
+        subscriptionEndDate: updatedHotel.subscriptionEndDate,
+        updatedAt: new Date().toISOString()
+      }
+    });
+
+  } catch (error) {
+    console.error('Update hotel subscription error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Get detailed information for a specific hotel
+const getHotelDetails = async (req, res) => {
+  try {
+    const { hotelId } = req.params;
+
+    const hotel = await prisma.hotel.findUnique({
+      where: { id: parseInt(hotelId) },
+      include: {
+        users: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            lastLogin: true,
+            createdAt: true,
+            isActive: true,
+            firstLoginCompleted: true
+          },
+          orderBy: { createdAt: 'desc' }
+        },
+        rooms: {
+          select: {
+            id: true,
+            roomNumber: true,
+            status: true,
+            createdAt: true,
+            roomType: {
+              select: {
+                name: true,
+                basePrice: true
+              }
+            }
+          },
+          orderBy: { roomNumber: 'asc' }
+        },
+        bookings: {
+          where: {
+            createdAt: {
+              gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
+            }
+          },
+          select: {
+            id: true,
+            status: true,
+            finalAmount: true,
+            checkInDate: true,
+            checkOutDate: true,
+            createdAt: true,
+            guest: {
+              select: {
+                name: true,
+                email: true
+              }
+            }
+          },
+          orderBy: { createdAt: 'desc' }
+        }
+      }
+    });
+
+    if (!hotel) {
+      return res.status(404).json({ error: 'Hotel not found' });
+    }
+
+    // Calculate comprehensive statistics
+    const now = new Date();
+    const totalRevenue = hotel.bookings.reduce((sum, booking) => 
+      sum + parseFloat(booking.finalAmount), 0
+    );
+    
+    const roomsByStatus = hotel.rooms.reduce((acc, room) => {
+      acc[room.status] = (acc[room.status] || 0) + 1;
+      return acc;
+    }, {});
+
+    const usersByRole = hotel.users.reduce((acc, user) => {
+      acc[user.role] = (acc[user.role] || 0) + 1;
+      return acc;
+    }, {});
+
+    const activeUsers = hotel.users.filter(u => u.isActive).length;
+    const usersNeedingSetup = hotel.users.filter(u => !u.firstLoginCompleted).length;
+
+    // Calculate subscription details
+    let daysRemaining = 0;
+    let subscriptionStatus = hotel.subscriptionStatus;
+    if (hotel.subscriptionEndDate) {
+      daysRemaining = Math.ceil((hotel.subscriptionEndDate - now) / (1000 * 60 * 60 * 24));
+      if (daysRemaining <= 0 && hotel.subscriptionStatus !== 'expired') {
+        subscriptionStatus = 'expired';
+      }
+    }
+
+    res.json({
+      success: true,
+      message: 'Hotel details retrieved successfully',
+      data: {
+        hotel: {
+          id: hotel.id,
+          name: hotel.name,
+          address: hotel.address,
+          phone: hotel.phone,
+          ownerEmail: hotel.ownerEmail,
+          subscriptionStatus,
+          subscriptionEndDate: hotel.subscriptionEndDate,
+          monthlyRate: parseFloat(hotel.monthlyRate) || 0,
+          daysRemaining: Math.max(0, daysRemaining),
+          isActive: hotel.isActive,
+          createdAt: hotel.createdAt,
+          lastReminderSent: hotel.lastReminderSent,
+          paymentHistory: hotel.paymentHistory
+        },
+        users: hotel.users,
+        rooms: hotel.rooms,
+        recentBookings: hotel.bookings,
+        statistics: {
+          users: {
+            total: hotel.users.length,
+            active: activeUsers,
+            needingSetup: usersNeedingSetup,
+            byRole: usersByRole
+          },
+          rooms: {
+            total: hotel.rooms.length,
+            byStatus: roomsByStatus
+          },
+          bookings: {
+            last30Days: hotel.bookings.length,
+            revenueLast30Days: totalRevenue
+          }
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error('Get hotel details error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Enhanced platform statistics
+const getEnhancedPlatformStats = async (req, res) => {
+  try {
+    const stats = await prisma.$transaction(async (tx) => {
+      // Basic counts
+      const totalHotels = await tx.hotel.count();
+      const activeHotels = await tx.hotel.count({
+        where: { isActive: true }
+      });
+      const suspendedHotels = await tx.hotel.count({
+        where: { isActive: false }
+      });
+      
+      // Subscription status counts
+      const trialHotels = await tx.hotel.count({
+        where: { subscriptionStatus: 'trial', isActive: true }
+      });
+      const activeSubscriptions = await tx.hotel.count({
+        where: { subscriptionStatus: 'active', isActive: true }
+      });
+      const expiredHotels = await tx.hotel.count({
+        where: { subscriptionStatus: 'expired' }
+      });
+      
+      // User counts
+      const totalUsers = await tx.user.count({
+        where: { role: { not: 'platform_admin' } }
+      });
+      const activeUsers = await tx.user.count({
+        where: { 
+          role: { not: 'platform_admin' },
+          isActive: true 
+        }
+      });
+      
+      // Recent activity (last 30 days)
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const newHotelsLast30Days = await tx.hotel.count({
+        where: { createdAt: { gte: thirtyDaysAgo } }
+      });
+      
+      // Hotels needing attention (expiring soon)
+      const sevenDaysFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      const hotelsExpiringSoon = await tx.hotel.count({
+        where: {
+          subscriptionEndDate: {
+            lte: sevenDaysFromNow,
+            gt: new Date()
+          },
+          isActive: true
+        }
+      });
+
+      return {
+        hotels: {
+          total: totalHotels,
+          active: activeHotels,
+          suspended: suspendedHotels,
+          trial: trialHotels,
+          activeSubscriptions,
+          expired: expiredHotels,
+          expiringSoon: hotelsExpiringSoon,
+          newLast30Days: newHotelsLast30Days
+        },
+        users: {
+          total: totalUsers,
+          active: activeUsers
+        },
+        generatedAt: new Date().toISOString()
+      };
+    });
+    
+    res.json({
+      success: true,
+      message: 'Enhanced platform statistics retrieved',
+      data: stats
+    });
+    
+  } catch (error) {
+    console.error('Enhanced platform stats error:', error);
+    res.status(500).json({
+      error: 'Failed to retrieve platform statistics'
+    });
+  }
+};
+
 module.exports = {
   setupHotel,
-  getPlatformStats
+  getPlatformStats,
+  getAllHotelsDetailed,
+  updateHotelStatus,
+  updateHotelSubscription,
+  getHotelDetails,
+  getEnhancedPlatformStats
 };

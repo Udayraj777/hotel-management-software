@@ -1,6 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const { z } = require('zod');
 const { hashPassword } = require('../utils/auth');
+const { updateHotelSetupStatus } = require('../utils/hotelSetupChecker');
 
 const prisma = new PrismaClient();
 
@@ -49,6 +50,12 @@ const createStaff = async (req, res) => {
           select: { name: true }
         }
       }
+    });
+
+    // Check if hotel setup is now complete (staff member was created)
+    console.log(`[Setup Check] Staff member created for hotel ${hotelId}`);
+    updateHotelSetupStatus(hotelId).catch(error => {
+      console.error('Error updating hotel setup status after staff creation:', error);
     });
 
     res.status(201).json({

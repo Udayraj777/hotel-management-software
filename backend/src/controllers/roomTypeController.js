@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const { z } = require('zod');
+const { updateHotelSetupStatus } = require('../utils/hotelSetupChecker');
 
 const prisma = new PrismaClient();
 
@@ -49,6 +50,12 @@ const createRoomType = async (req, res) => {
         amenities: roomTypeData.amenities || null,
         hotelId
       }
+    });
+
+    // Check if hotel setup is now complete (room type was created)
+    console.log(`[Setup Check] Room type created for hotel ${hotelId}`);
+    updateHotelSetupStatus(hotelId).catch(error => {
+      console.error('Error updating hotel setup status after room type creation:', error);
     });
 
     res.status(201).json({
